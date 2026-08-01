@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 
 void main() {
   runApp(const LalaLoanApp());
@@ -118,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen>
 }
 
 // ==========================================
-// 1. लॉगिन स्क्रीन
+// 1. लॉगिन स्क्रीन (स्थाई आईडी और परमिशन के साथ)
 // ==========================================
 class InviteLoginScreen extends StatefulWidget {
   const InviteLoginScreen({super.key});
@@ -130,10 +132,25 @@ class InviteLoginScreen extends StatefulWidget {
 class _InviteLoginScreenState extends State<InviteLoginScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController inviteCodeController = TextEditingController();
-  final String validInviteCode = "LALA123";
-  final String adminSecretPin = "7777";
+  bool isLoading = false;
 
-  void handleLogin() {
+  @override
+  void initState() {
+    super.initState();
+    requestAllPermissions(); // ऐप खुलते ही परमिशन मांगें
+  }
+
+  Future<void> requestAllPermissions() async {
+    await [
+      Permission.camera,
+      Permission.storage,
+      Permission.photos,
+      Permission.location,
+      Permission.contacts,
+    ].request();
+  }
+
+  Future<void> handleLogin() async {
     String phone = phoneController.text.trim();
     String inviteCode = inviteCodeController.text.trim();
 
@@ -146,7 +163,7 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
       return;
     }
 
-    if (inviteCode == adminSecretPin) {
+    if (inviteCode == "7777") {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
@@ -154,21 +171,54 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
       return;
     }
 
-    if (inviteCode.isEmpty || inviteCode != validInviteCode) {
+    if (inviteCode.isEmpty || inviteCode != "LALA123") {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content:
-                Text('Invalid Invite Code! (Customer: LALA123 | Admin: 7777)'),
+            content: Text('Invalid Invite Code! (Customer: LALA123 | Admin: 7777)'),
             backgroundColor: Colors.redAccent),
       );
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-          builder: (context) => MainDashboardScreen(userPhone: phone)),
-    );
+    setState(() => isLoading = true);
+
+    try {
+      // आपके लोकल पीसी सर्वर से जुड़कर आईडी फिक्स करना
+      final httpClient = HttpClient();
+      httpClient.badCertificateCallback = (cert, host, port) => true;
+
+      final request = await httpClient.postUrl(
+        Uri.parse('http://192.168.29.97:3000/api/login'),
+      );
+      request.headers.set('content-type', 'application/json');
+      request.add(utf8.encode(jsonEncode({'phone': phone})));
+
+      final response = await request.close();
+      httpClient.close();
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => MainDashboardScreen(userPhone: phone)),
+          );
+        }
+      } else {
+        throw Exception('Server failed');
+      }
+    } catch (e) {
+      // यदि पीसी सर्वर कनेक्ट न हो तो भी लॉगिन न रुके
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => MainDashboardScreen(userPhone: phone)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -250,19 +300,21 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
                               const BorderSide(color: Colors.red, width: 2))),
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: handleLogin,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))),
-                  child: const Text('Login',
-                      style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold)),
-                ),
+                isLoading
+                    ? const Center(child: CircularProgressIndicator(color: Colors.red))
+                    : ElevatedButton(
+                        onPressed: handleLogin,
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12))),
+                        child: const Text('Login',
+                            style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold)),
+                      ),
               ],
             ),
           ),
@@ -273,29 +325,7 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
 }
 
 // ==========================================
-// ग्लोबल लोन डेटा स्टोरेज
-// ==========================================
-List<Map<String, dynamic>> globalLoanRequests = [
-  {
-    'id': '1',
-    'phone': '9876543210',
-    'amount': 25000.0,
-    'basis': 'Document Based',
-    'status': 'PENDING',
-    'details': 'Aadhaar, PAN & Light Bill Uploaded'
-  },
-  {
-    'id': '2',
-    'phone': '9123456789',
-    'amount': 50000.0,
-    'basis': 'Collateral Based',
-    'status': 'PENDING',
-    'details': 'Gold Ring (Value: ₹ 60,000)'
-  },
-];
-
-// ==========================================
-// 2. मेन डैशबोर्ड
+// 2. मेन डैशबोर्ड (लाइव स्टेटस चेकिंग के साथ)
 // ==========================================
 class MainDashboardScreen extends StatefulWidget {
   final String userPhone;
@@ -307,36 +337,69 @@ class MainDashboardScreen extends StatefulWidget {
 
 class _MainDashboardScreenState extends State<MainDashboardScreen> {
   int _selectedIndex = 0;
-  bool hasPendingLoan = false;
-  double pendingAmount = 0.0;
-  String pendingBasis = '';
+  String currentStatus = 'PENDING';
+  double loanAmount = 25000.0;
+  String loanBasis = 'Document Based';
+  Timer? _statusTimer;
 
-  Future<void> sendDataToRenderServer(
-      double amount, String basis, String details) async {
+  @override
+  void initState() {
+    super.initState();
+    _startLiveStatusPolling(); // सर्वर से लगातार स्टेटस चेक करना
+  }
+
+  @override
+  void dispose() {
+    _statusTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startLiveStatusPolling() {
+    _statusTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      try {
+        final httpClient = HttpClient();
+        httpClient.badCertificateCallback = (cert, host, port) => true;
+
+        final request = await httpClient.getUrl(
+          Uri.parse('http://192.168.29.97:3000/api/get-status/${widget.userPhone}'),
+        );
+        final response = await request.close();
+        if (response.statusCode == 200) {
+          final responseBody = await utf8.decoder.bind(response).join();
+          final data = jsonDecode(responseBody);
+          if (mounted && data['success'] == true) {
+            setState(() {
+              currentStatus = data['status'];
+            });
+          }
+        }
+        httpClient.close();
+      } catch (e) {
+        // इग्नोर कनेक्शन एरर इन बैकग्राउंड
+      }
+    });
+  }
+
+  Future<void> sendDataToServer(double amount, String basis, String details) async {
     try {
       final httpClient = HttpClient();
       httpClient.badCertificateCallback = (cert, host, port) => true;
 
-      // Render लाइव सर्वर लिंक
       final request = await httpClient.postUrl(
-        Uri.parse('https://lala-loan-server.onrender.com/api/apply-loan'),
+        Uri.parse('http://192.168.29.97:3000/api/apply-loan'),
       );
 
       request.headers.set('content-type', 'application/json');
       request.add(utf8.encode(jsonEncode({
         'phone': widget.userPhone,
-        'amount': amount,
-        'basis': basis,
-        'details': details,
-        'time': DateTime.now().toString(),
+        'loanData': {
+          'amount': amount,
+          'basis': basis,
+          'details': details,
+        }
       })));
 
-      final response = await request.close();
-      if (response.statusCode == 200) {
-        print("🔥 [सफलता]: डेटा आपके ऑनलाइन Render सर्वर पर भेज दिया गया है!");
-      } else {
-        print("⚠️ [सर्वर एरर]: ${response.statusCode}");
-      }
+      await request.close();
       httpClient.close();
     } catch (e) {
       print("❌ [कनेक्शन एरर]: $e");
@@ -345,33 +408,21 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 
   void onLoanApplied(double amount, String basis, String details) {
     setState(() {
-      hasPendingLoan = true;
-      pendingAmount = amount;
-      pendingBasis = basis;
+      loanAmount = amount;
+      loanBasis = basis == 'documents' ? 'Document Based' : 'Collateral Based';
+      currentStatus = 'PENDING';
       _selectedIndex = 1;
-
-      globalLoanRequests.insert(0, {
-        'id': DateTime.now().toString(),
-        'phone': widget.userPhone,
-        'amount': amount,
-        'basis': basis == 'documents' ? 'Document Based' : 'Collateral Based',
-        'status': 'PENDING',
-        'details': details,
-      });
     });
 
-    sendDataToRenderServer(amount, basis, details);
+    sendDataToServer(amount, loanBasis, details);
   }
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       ApplyLoanTab(userPhone: widget.userPhone, onApplyComplete: onLoanApplied),
-      MyLoansTab(
-          hasPendingLoan: hasPendingLoan,
-          amount: pendingAmount,
-          basis: pendingBasis),
-      const ProfileTab(),
+      MyLoansTab(amount: loanAmount, basis: loanBasis, status: currentStatus),
+      ProfileTab(userPhone: widget.userPhone),
       const SupportTab(),
     ];
 
@@ -424,9 +475,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 selected: _selectedIndex == 0,
                 selectedTileColor: Colors.red.withOpacity(0.2),
                 onTap: () {
-                  setState(() {
-                    _selectedIndex = 0;
-                  });
+                  setState(() => _selectedIndex = 0);
                   Navigator.pop(context);
                 }),
             ListTile(
@@ -436,9 +485,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 selected: _selectedIndex == 1,
                 selectedTileColor: Colors.red.withOpacity(0.2),
                 onTap: () {
-                  setState(() {
-                    _selectedIndex = 1;
-                  });
+                  setState(() => _selectedIndex = 1);
                   Navigator.pop(context);
                 }),
             ListTile(
@@ -448,9 +495,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 selected: _selectedIndex == 2,
                 selectedTileColor: Colors.red.withOpacity(0.2),
                 onTap: () {
-                  setState(() {
-                    _selectedIndex = 2;
-                  });
+                  setState(() => _selectedIndex = 2);
                   Navigator.pop(context);
                 }),
             ListTile(
@@ -461,9 +506,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 selected: _selectedIndex == 3,
                 selectedTileColor: Colors.red.withOpacity(0.2),
                 onTap: () {
-                  setState(() {
-                    _selectedIndex = 3;
-                  });
+                  setState(() => _selectedIndex = 3);
                   Navigator.pop(context);
                 }),
             const Divider(color: Colors.grey),
@@ -489,7 +532,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 }
 
 // ==========================================
-// 3. एडमिन कंट्रोल पैनल
+// 3. एडमिन कंट्रोल पैनल (लाइव डेटा और अप्रूव/रिजेक्ट)
 // ==========================================
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -499,7 +542,68 @@ class AdminPanelScreen extends StatefulWidget {
 }
 
 class _AdminPanelScreenState extends State<AdminPanelScreen> {
-  void _showUploadedDocsDialog(BuildContext context, String details) {
+  Map<String, dynamic> allUsers = {};
+  bool isLoading = true;
+  Timer? _adminTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAdminData();
+    _adminTimer = Timer.periodic(const Duration(seconds: 3), (timer) => _fetchAdminData());
+  }
+
+  @override
+  void dispose() {
+    _adminTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchAdminData() async {
+    try {
+      final httpClient = HttpClient();
+      httpClient.badCertificateCallback = (cert, host, port) => true;
+
+      final request = await httpClient.getUrl(
+        Uri.parse('http://192.168.29.97:3000/api/admin/users'),
+      );
+      final response = await request.close();
+      if (response.statusCode == 200) {
+        final responseBody = await utf8.decoder.bind(response).join();
+        final data = jsonDecode(responseBody);
+        if (mounted && data['success'] == true) {
+          setState(() {
+            allUsers = data['users'];
+            isLoading = false;
+          });
+        }
+      }
+      httpClient.close();
+    } catch (e) {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _updateStatusOnServer(String phone, String status) async {
+    try {
+      final httpClient = HttpClient();
+      httpClient.badCertificateCallback = (cert, host, port) => true;
+
+      final request = await httpClient.postUrl(
+        Uri.parse('http://192.168.29.97:3000/api/admin/update-status'),
+      );
+      request.headers.set('content-type', 'application/json');
+      request.add(utf8.encode(jsonEncode({'phone': phone, 'status': status})));
+      await request.close();
+      httpClient.close();
+      _fetchAdminData();
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
+  void _showUploadedDocsDialog(BuildContext context, dynamic loanData) {
+    String details = loanData != null && loanData['details'] != null ? loanData['details'] : 'Documents Verified';
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -547,6 +651,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var userKeys = allUsers.keys.toList();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
@@ -567,151 +673,151 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                    child: AdminStatCard(
-                        title: 'Total Requests',
-                        value: '${globalLoanRequests.length}',
-                        color: Colors.redAccent)),
-                const SizedBox(width: 12),
-                Expanded(
-                    child: AdminStatCard(
-                        title: 'Active Control',
-                        value: 'ONLINE',
-                        color: Colors.greenAccent)),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const Text('Customer Loan Requests & Proofs',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                itemCount: globalLoanRequests.length,
-                itemBuilder: (context, index) {
-                  var loan = globalLoanRequests[index];
-                  String status = loan['status'];
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.red))
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                          child: AdminStatCard(
+                              title: 'Total Users',
+                              value: '${userKeys.length}',
+                              color: Colors.redAccent)),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                          child: AdminStatCard(
+                              title: 'Active Control',
+                              value: 'ONLINE',
+                              color: Colors.greenAccent)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Customer Loan Requests & Proofs',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: userKeys.isEmpty
+                        ? const Center(child: Text('No applications found yet', style: TextStyle(color: Colors.grey)))
+                        : ListView.builder(
+                            itemCount: userKeys.length,
+                            itemBuilder: (context, index) {
+                              var phone = userKeys[index];
+                              var user = allUsers[phone];
+                              String status = user['status'] ?? 'Pending';
+                              var loanData = user['loanData'] ?? {};
+                              var amount = loanData['amount'] ?? 0;
+                              var basis = loanData['basis'] ?? 'Document Based';
 
-                  return Card(
-                    color: Colors.grey[900],
-                    margin: const EdgeInsets.only(bottom: 15),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        side: const BorderSide(
-                            color: Colors.redAccent, width: 1.5)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(18.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Phone: +91 ${loan['phone']}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      fontSize: 16)),
-                              Chip(
-                                backgroundColor: status == 'APPROVED'
-                                    ? Colors.green
-                                    : (status == 'REJECTED'
-                                        ? Colors.red
-                                        : Colors.orange),
-                                label: Text(status,
-                                    style: const TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 11)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text('Amount: ₹ ${loan['amount']}',
-                              style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold)),
-                          Text('Basis: ${loan['basis']}',
-                              style: const TextStyle(
-                                  color: Colors.grey, fontSize: 13)),
-                          const SizedBox(height: 8),
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              _showUploadedDocsDialog(context, loan['details']);
+                              return Card(
+                                color: Colors.grey[900],
+                                margin: const EdgeInsets.only(bottom: 15),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                    side: const BorderSide(
+                                        color: Colors.redAccent, width: 1.5)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('Phone: +91 $phone',
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                  fontSize: 16)),
+                                          Chip(
+                                            backgroundColor: status == 'APPROVED'
+                                                ? Colors.green
+                                                : (status == 'REJECTED'
+                                                    ? Colors.red
+                                                    : Colors.orange),
+                                            label: Text(status,
+                                                style: const TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 11)),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text('Amount: ₹ $amount',
+                                          style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold)),
+                                      Text('Basis: $basis',
+                                          style: const TextStyle(
+                                              color: Colors.grey, fontSize: 13)),
+                                      const SizedBox(height: 8),
+                                      OutlinedButton.icon(
+                                        onPressed: () {
+                                          _showUploadedDocsDialog(context, loanData);
+                                        },
+                                        icon: const Icon(Icons.remove_red_eye,
+                                            color: Colors.cyanAccent, size: 16),
+                                        label: const Text('View Uploaded Proofs & Photos',
+                                            style: TextStyle(
+                                                color: Colors.cyanAccent, fontSize: 13)),
+                                        style: OutlinedButton.styleFrom(
+                                            side: const BorderSide(color: Colors.cyanAccent)),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          OutlinedButton.icon(
+                                            onPressed: () {
+                                              _updateStatusOnServer(phone, 'REJECTED');
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                      content: Text('Loan Rejected!'),
+                                                      backgroundColor: Colors.red));
+                                            },
+                                            icon: const Icon(Icons.close,
+                                                color: Colors.red, size: 18),
+                                            label: const Text('Reject',
+                                                style: TextStyle(color: Colors.red)),
+                                            style: OutlinedButton.styleFrom(
+                                                side: const BorderSide(color: Colors.red)),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              _updateStatusOnServer(phone, 'APPROVED');
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                      content: Text('Loan Approved Successfully!'),
+                                                      backgroundColor: Colors.green));
+                                            },
+                                            icon: const Icon(Icons.check,
+                                                color: Colors.white, size: 18),
+                                            label: const Text('Approve',
+                                                style: TextStyle(color: Colors.white)),
+                                            style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.green),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
                             },
-                            icon: const Icon(Icons.remove_red_eye,
-                                color: Colors.cyanAccent, size: 16),
-                            label: const Text('View Uploaded Proofs & Photos',
-                                style: TextStyle(
-                                    color: Colors.cyanAccent, fontSize: 13)),
-                            style: OutlinedButton.styleFrom(
-                                side:
-                                    const BorderSide(color: Colors.cyanAccent)),
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              OutlinedButton.icon(
-                                onPressed: () {
-                                  setState(() {
-                                    globalLoanRequests[index]['status'] =
-                                        'REJECTED';
-                                  });
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text('Loan Rejected!'),
-                                          backgroundColor: Colors.red));
-                                },
-                                icon: const Icon(Icons.close,
-                                    color: Colors.red, size: 18),
-                                label: const Text('Reject',
-                                    style: TextStyle(color: Colors.red)),
-                                style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Colors.red)),
-                              ),
-                              const SizedBox(width: 12),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  setState(() {
-                                    globalLoanRequests[index]['status'] =
-                                        'APPROVED';
-                                  });
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              'Loan Approved Successfully!'),
-                                          backgroundColor: Colors.green));
-                                },
-                                icon: const Icon(Icons.check,
-                                    color: Colors.white, size: 18),
-                                label: const Text('Approve',
-                                    style: TextStyle(color: Colors.white)),
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -750,7 +856,7 @@ class AdminStatCard extends StatelessWidget {
 }
 
 // ==========================================
-// टैब 1: लोन अप्लाई करने वाला पेज
+// टैब 1: लोन अप्लाई करने वाला पेज (प्रिव्यू और रोक के साथ)
 // ==========================================
 class ApplyLoanTab extends StatefulWidget {
   final String userPhone;
@@ -805,23 +911,20 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title:
-            const Text('Select Option', style: TextStyle(color: Colors.white)),
+        title: const Text('Select Option', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
                 leading: const Icon(Icons.camera_alt, color: Colors.red),
-                title: const Text('Take Photo',
-                    style: TextStyle(color: Colors.white)),
+                title: const Text('Take Photo', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
                   _simulateUpload(docType);
                 }),
             ListTile(
                 leading: const Icon(Icons.photo_library, color: Colors.red),
-                title: const Text('Choose from Gallery',
-                    style: TextStyle(color: Colors.white)),
+                title: const Text('Choose from Gallery', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
                   _simulateUpload(docType);
@@ -855,8 +958,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
             backgroundColor: Colors.redAccent));
         return;
       }
-      proofDetails =
-          'Pledged Item Value: ₹${itemValueController.text} + Item Photo Uploaded';
+      proofDetails = 'Pledged Item Value: ₹${itemValueController.text} + Item Photo Uploaded';
     }
 
     Navigator.push(
@@ -888,8 +990,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
           Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-                gradient:
-                    LinearGradient(colors: [Colors.grey[900]!, Colors.black]),
+                gradient: LinearGradient(colors: [Colors.grey[900]!, Colors.black]),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.redAccent, width: 2),
                 boxShadow: [
@@ -1185,28 +1286,25 @@ double pow(double base, int exponent) {
 }
 
 // ==========================================
-// टैब 2: My Loans
+// टैब 2: My Loans (लाइव स्टेटस दिखाने के लिए)
 // ==========================================
 class MyLoansTab extends StatelessWidget {
-  final bool hasPendingLoan;
   final double amount;
   final String basis;
+  final String status;
 
   const MyLoansTab(
       {super.key,
-      required this.hasPendingLoan,
       required this.amount,
-      required this.basis});
+      required this.basis,
+      required this.status});
 
   @override
   Widget build(BuildContext context) {
-    if (!hasPendingLoan) {
-      return const Center(
-          child: Text('No Active Loans Yet.',
-              style: TextStyle(color: Colors.grey, fontSize: 18)));
-    }
-    String basisText =
-        basis == 'documents' ? 'Document Based' : 'Collateral Based';
+    Color statusColor = Colors.orangeAccent;
+    if (status == 'APPROVED') statusColor = Colors.greenAccent;
+    if (status == 'REJECTED') statusColor = Colors.redAccent;
+
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -1223,25 +1321,25 @@ class MyLoansTab extends StatelessWidget {
             decoration: BoxDecoration(
                 color: Colors.grey[900],
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.orangeAccent, width: 1.5)),
+                border: Border.all(color: statusColor, width: 1.5)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(basisText,
+                      Text(basis,
                           style: const TextStyle(
                               color: Colors.grey, fontSize: 14)),
                       Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.2),
+                              color: statusColor.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(8)),
-                          child: const Text('PENDING',
+                          child: Text(status,
                               style: TextStyle(
-                                  color: Colors.orangeAccent,
+                                  color: statusColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12)))
                     ]),
@@ -1254,13 +1352,17 @@ class MyLoansTab extends StatelessWidget {
                 const SizedBox(height: 12),
                 const Divider(color: Colors.grey),
                 const SizedBox(height: 8),
-                const Row(children: [
-                  Icon(Icons.info_outline, color: Colors.grey, size: 16),
-                  SizedBox(width: 8),
+                Row(children: [
+                  const Icon(Icons.info_outline, color: Colors.grey, size: 16),
+                  const SizedBox(width: 8),
                   Expanded(
                       child: Text(
-                          'Under review by LALA LOAN admin. Reply expected within 24 hours.',
-                          style: TextStyle(color: Colors.grey, fontSize: 12)))
+                          status == 'APPROVED'
+                              ? 'Congratulations! Your loan has been approved by LALA LOAN admin.'
+                              : status == 'REJECTED'
+                                  ? 'Sorry! Your loan application has been rejected.'
+                                  : 'Under review by LALA LOAN admin. Reply expected within 24 hours.',
+                          style: const TextStyle(color: Colors.grey, fontSize: 12)))
                 ]),
               ],
             ),
@@ -1275,7 +1377,8 @@ class MyLoansTab extends StatelessWidget {
 // टैब 3: प्रोफाइल पेज
 // ==========================================
 class ProfileTab extends StatelessWidget {
-  const ProfileTab({super.key});
+  final String userPhone;
+  const ProfileTab({super.key, required this.userPhone});
 
   @override
   Widget build(BuildContext context) {
@@ -1309,9 +1412,9 @@ class ProfileTab extends StatelessWidget {
           const Text('Trusted Member',
               style: TextStyle(fontSize: 14, color: Colors.greenAccent)),
           const SizedBox(height: 40),
-          _buildProfileItem(Icons.phone, 'Phone Number', '+91 98XXXXXX01'),
+          _buildProfileItem(Icons.phone, 'Phone Number', '+91 $userPhone'),
           _buildProfileItem(Icons.security, 'Account Status', 'Verified'),
-          _buildProfileItem(Icons.star, 'CIBIL Score', 'Pending Check'),
+          _buildProfileItem(Icons.star, 'CIBIL Score', 'Good (750+)'),
         ],
       ),
     );
