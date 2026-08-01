@@ -22,6 +22,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # यहाँ आपका लोगो सेट किया गया है
   assets:
     - assets/logo.png
