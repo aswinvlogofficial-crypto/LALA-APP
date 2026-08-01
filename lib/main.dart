@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
@@ -26,7 +27,7 @@ class LalaLoanApp extends StatelessWidget {
 }
 
 // ==========================================
-// 0. स्प्लैश स्क्रीन (Splash Screen)
+// 0. स्प्लैश स्क्रीन
 // ==========================================
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -120,7 +121,7 @@ class _SplashScreenState extends State<SplashScreen>
 }
 
 // ==========================================
-// 1. लॉगिन स्क्रीन (स्थाई आईडी और परमिशन के साथ)
+// 1. लॉगिन स्क्रीन
 // ==========================================
 class InviteLoginScreen extends StatefulWidget {
   const InviteLoginScreen({super.key});
@@ -137,7 +138,7 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
   @override
   void initState() {
     super.initState();
-    requestAllPermissions(); // ऐप खुलते ही परमिशन मांगें
+    requestAllPermissions();
   }
 
   Future<void> requestAllPermissions() async {
@@ -183,7 +184,6 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
     setState(() => isLoading = true);
 
     try {
-      // आपके लोकल पीसी सर्वर से जुड़कर आईडी फिक्स करना
       final httpClient = HttpClient();
       httpClient.badCertificateCallback = (cert, host, port) => true;
 
@@ -192,32 +192,19 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
       );
       request.headers.set('content-type', 'application/json');
       request.add(utf8.encode(jsonEncode({'phone': phone})));
-
-      final response = await request.close();
+      await request.close();
       httpClient.close();
-
-      if (response.statusCode == 200) {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => MainDashboardScreen(userPhone: phone)),
-          );
-        }
-      } else {
-        throw Exception('Server failed');
-      }
     } catch (e) {
-      // यदि पीसी सर्वर कनेक्ट न हो तो भी लॉगिन न रुके
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => MainDashboardScreen(userPhone: phone)),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => isLoading = false);
+      // यदि सर्वर ऑफलाइन हो तो भी लॉगिन न रुके
+    }
+
+    if (mounted) {
+      setState(() => isLoading = false);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) => MainDashboardScreen(userPhone: phone)),
+      );
     }
   }
 
@@ -325,7 +312,7 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
 }
 
 // ==========================================
-// 2. मेन डैशबोर्ड (लाइव स्टेटस चेकिंग के साथ)
+// 2. मेन डैशबोर्ड
 // ==========================================
 class MainDashboardScreen extends StatefulWidget {
   final String userPhone;
@@ -345,7 +332,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _startLiveStatusPolling(); // सर्वर से लगातार स्टेटस चेक करना
+    _startLiveStatusPolling();
   }
 
   @override
@@ -374,36 +361,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           }
         }
         httpClient.close();
-      } catch (e) {
-        // इग्नोर कनेक्शन एरर इन बैकग्राउंड
-      }
+      } catch (e) {}
     });
-  }
-
-  Future<void> sendDataToServer(double amount, String basis, String details) async {
-    try {
-      final httpClient = HttpClient();
-      httpClient.badCertificateCallback = (cert, host, port) => true;
-
-      final request = await httpClient.postUrl(
-        Uri.parse('http://192.168.29.97:3000/api/apply-loan'),
-      );
-
-      request.headers.set('content-type', 'application/json');
-      request.add(utf8.encode(jsonEncode({
-        'phone': widget.userPhone,
-        'loanData': {
-          'amount': amount,
-          'basis': basis,
-          'details': details,
-        }
-      })));
-
-      await request.close();
-      httpClient.close();
-    } catch (e) {
-      print("❌ [कनेक्शन एरर]: $e");
-    }
   }
 
   void onLoanApplied(double amount, String basis, String details) {
@@ -413,8 +372,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       currentStatus = 'PENDING';
       _selectedIndex = 1;
     });
-
-    sendDataToServer(amount, loanBasis, details);
   }
 
   @override
@@ -532,7 +489,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 }
 
 // ==========================================
-// 3. एडमिन कंट्रोल पैनल (लाइव डेटा और अप्रूव/रिजेक्ट)
+// 3. एडमिन कंट्रोल पैनल
 // ==========================================
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -597,9 +554,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       await request.close();
       httpClient.close();
       _fetchAdminData();
-    } catch (e) {
-      print("Error: $e");
-    }
+    } catch (e) {}
   }
 
   void _showUploadedDocsDialog(BuildContext context, dynamic loanData) {
@@ -710,8 +665,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                             itemBuilder: (context, index) {
                               var phone = userKeys[index];
                               var user = allUsers[phone];
-                              String status = user['status'] ?? 'Pending';
-                              var loanData = user['loanData'] ?? {};
+                              String status = user['status'] ?? 'PENDING';
+                              var loanData = user['loanData'];
+
+                              if (loanData == null) {
+                                return const SizedBox.shrink(); // अगर लोन अप्लाई नहीं किया तो न दिखाएं
+                              }
+
                               var amount = loanData['amount'] ?? 0;
                               var basis = loanData['basis'] ?? 'Document Based';
 
@@ -856,7 +816,7 @@ class AdminStatCard extends StatelessWidget {
 }
 
 // ==========================================
-// टैब 1: लोन अप्लाई करने वाला पेज (प्रिव्यू और रोक के साथ)
+// टैब 1: लोन अप्लाई करने वाला पेज (असली कैमरा/गैलरी पिकर के साथ)
 // ==========================================
 class ApplyLoanTab extends StatefulWidget {
   final String userPhone;
@@ -875,35 +835,28 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
   String selectedLoanBasis = 'documents';
   final TextEditingController itemValueController = TextEditingController();
 
-  bool isAadhaarUploaded = false;
-  bool isPanUploaded = false;
-  bool isLightBillUploaded = false;
-  bool isPledgedUploaded = false;
+  File? aadhaarFile;
+  File? panFile;
+  File? lightBillFile;
+  File? pledgedFile;
 
-  void _simulateUpload(String docType) {
-    showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-            backgroundColor: Colors.grey[900],
-            content: const Row(children: [
-              CircularProgressIndicator(color: Colors.red),
-              SizedBox(width: 20),
-              Text('Uploading File...',
-                  style: TextStyle(color: Colors.white, fontSize: 16))
-            ])));
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pop(context);
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage(String docType, ImageSource source) async {
+    final XFile? image = await _picker.pickImage(source: source);
+    if (image != null) {
       setState(() {
-        if (docType == 'aadhaar') isAadhaarUploaded = true;
-        if (docType == 'pan') isPanUploaded = true;
-        if (docType == 'lightbill') isLightBillUploaded = true;
-        if (docType == 'pledged') isPledgedUploaded = true;
+        if (docType == 'aadhaar') aadhaarFile = File(image.path);
+        if (docType == 'pan') panFile = File(image.path);
+        if (docType == 'lightbill') lightBillFile = File(image.path);
+        if (docType == 'pledged') pledgedFile = File(image.path);
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Uploaded successfully!'),
-          backgroundColor: Colors.green));
-    });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Photo attached successfully!'),
+            backgroundColor: Colors.green));
+      }
+    }
   }
 
   void _showSourceDialog(String docType) {
@@ -920,14 +873,14 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                 title: const Text('Take Photo', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
-                  _simulateUpload(docType);
+                  _pickImage(docType, ImageSource.camera);
                 }),
             ListTile(
                 leading: const Icon(Icons.photo_library, color: Colors.red),
                 title: const Text('Choose from Gallery', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
-                  _simulateUpload(docType);
+                  _pickImage(docType, ImageSource.gallery);
                 }),
           ],
         ),
@@ -935,16 +888,42 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
     );
   }
 
+  Future<void> sendDataToServer(double amount, String basis, String details) async {
+    try {
+      final httpClient = HttpClient();
+      httpClient.badCertificateCallback = (cert, host, port) => true;
+
+      final request = await httpClient.postUrl(
+        Uri.parse('http://192.168.29.97:3000/api/apply-loan'),
+      );
+
+      request.headers.set('content-type', 'application/json');
+      request.add(utf8.encode(jsonEncode({
+        'phone': widget.userPhone,
+        'loanData': {
+          'amount': amount,
+          'basis': basis,
+          'details': details,
+        }
+      })));
+
+      await request.close();
+      httpClient.close();
+    } catch (e) {
+      print("Error sending to server: $e");
+    }
+  }
+
   void applyForLoan() {
     String proofDetails = '';
     if (selectedLoanBasis == 'documents') {
-      if (!isAadhaarUploaded || !isPanUploaded || !isLightBillUploaded) {
+      if (aadhaarFile == null || panFile == null || lightBillFile == null) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Error: Please upload ALL required documents first!'),
             backgroundColor: Colors.redAccent));
         return;
       }
-      proofDetails = 'ID Proof, PAN Card & Light Bill Verified';
+      proofDetails = 'ID Proof, PAN Card & Light Bill Attached';
     } else {
       if (itemValueController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -952,14 +931,17 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
             backgroundColor: Colors.redAccent));
         return;
       }
-      if (!isPledgedUploaded) {
+      if (pledgedFile == null) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Error: Please upload a photo of the pledged item!'),
             backgroundColor: Colors.redAccent));
         return;
       }
-      proofDetails = 'Pledged Item Value: ₹${itemValueController.text} + Item Photo Uploaded';
+      proofDetails = 'Pledged Item Value: ₹${itemValueController.text} + Photo Attached';
     }
+
+    String basisName = selectedLoanBasis == 'documents' ? 'Document Based' : 'Collateral Based';
+    sendDataToServer(selectedAmount, basisName, proofDetails);
 
     Navigator.push(
       context,
@@ -1202,13 +1184,13 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                     fontWeight: FontWeight.bold,
                     color: Colors.white)),
             const SizedBox(height: 12),
-            _buildUploadButton('ID Proof', isAadhaarUploaded,
+            _buildUploadButton('ID Proof', aadhaarFile != null,
                 () => _showSourceDialog('aadhaar')),
             const SizedBox(height: 12),
             _buildUploadButton(
-                'PAN Card', isPanUploaded, () => _showSourceDialog('pan')),
+                'PAN Card', panFile != null, () => _showSourceDialog('pan')),
             const SizedBox(height: 12),
-            _buildUploadButton('Light Bill', isLightBillUploaded,
+            _buildUploadButton('Light Bill', lightBillFile != null,
                 () => _showSourceDialog('lightbill')),
           ] else ...[
             const Text('Pledged Item Details',
@@ -1235,7 +1217,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                         borderSide:
                             const BorderSide(color: Colors.red, width: 2)))),
             const SizedBox(height: 12),
-            _buildUploadButton('Pledged Item Photo', isPledgedUploaded,
+            _buildUploadButton('Pledged Item Photo', pledgedFile != null,
                 () => _showSourceDialog('pledged')),
           ],
           const SizedBox(height: 35),
@@ -1263,7 +1245,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
       onPressed: onPressed,
       icon: Icon(isUploaded ? Icons.check_circle : Icons.upload_file,
           color: isUploaded ? Colors.greenAccent : Colors.red),
-      label: Text(isUploaded ? '$title (Uploaded ✓)' : 'Upload $title',
+      label: Text(isUploaded ? '$title (Attached ✓)' : 'Attach $title',
           style: TextStyle(
               color: isUploaded ? Colors.greenAccent : Colors.white,
               fontSize: 16)),
@@ -1286,7 +1268,7 @@ double pow(double base, int exponent) {
 }
 
 // ==========================================
-// टैब 2: My Loans (लाइव स्टेटस दिखाने के लिए)
+// टैब 2: My Loans
 // ==========================================
 class MyLoansTab extends StatelessWidget {
   final double amount;
