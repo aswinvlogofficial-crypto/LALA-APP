@@ -26,9 +26,6 @@ class LalaLoanApp extends StatelessWidget {
   }
 }
 
-// ==========================================
-// 0. स्प्लैश स्क्रीन
-// ==========================================
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -120,9 +117,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// ==========================================
-// 1. लॉगिन स्क्रीन
-// ==========================================
 class InviteLoginScreen extends StatefulWidget {
   const InviteLoginScreen({super.key});
 
@@ -194,9 +188,7 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
       request.add(utf8.encode(jsonEncode({'phone': phone})));
       await request.close();
       httpClient.close();
-    } catch (e) {
-      // यदि सर्वर ऑफलाइन हो तो भी लॉगिन न रुके
-    }
+    } catch (e) {}
 
     if (mounted) {
       setState(() => isLoading = false);
@@ -311,9 +303,6 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
   }
 }
 
-// ==========================================
-// 2. मेन डैशबोर्ड
-// ==========================================
 class MainDashboardScreen extends StatefulWidget {
   final String userPhone;
   const MainDashboardScreen({super.key, required this.userPhone});
@@ -488,9 +477,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   }
 }
 
-// ==========================================
-// 3. एडमिन कंट्रोल पैनल
-// ==========================================
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
 
@@ -669,7 +655,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                               var loanData = user['loanData'];
 
                               if (loanData == null) {
-                                return const SizedBox.shrink(); // अगर लोन अप्लाई नहीं किया तो न दिखाएं
+                                return const SizedBox.shrink();
                               }
 
                               var amount = loanData['amount'] ?? 0;
@@ -815,9 +801,6 @@ class AdminStatCard extends StatelessWidget {
   }
 }
 
-// ==========================================
-// टैब 1: लोन अप्लाई करने वाला पेज (असली कैमरा/गैलरी पिकर के साथ)
-// ==========================================
 class ApplyLoanTab extends StatefulWidget {
   final String userPhone;
   final Function(double, String, String) onApplyComplete;
@@ -909,9 +892,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
 
       await request.close();
       httpClient.close();
-    } catch (e) {
-      print("Error sending to server: $e");
-    }
+    } catch (e) {}
   }
 
   void applyForLoan() {
@@ -1267,9 +1248,6 @@ double pow(double base, int exponent) {
   return result;
 }
 
-// ==========================================
-// टैब 2: My Loans
-// ==========================================
 class MyLoansTab extends StatelessWidget {
   final double amount;
   final String basis;
@@ -1355,9 +1333,6 @@ class MyLoansTab extends StatelessWidget {
   }
 }
 
-// ==========================================
-// टैब 3: प्रोफाइल पेज
-// ==========================================
 class ProfileTab extends StatelessWidget {
   final String userPhone;
   const ProfileTab({super.key, required this.userPhone});
@@ -1425,9 +1400,6 @@ class ProfileTab extends StatelessWidget {
   }
 }
 
-// ==========================================
-// टैब 4: कस्टमर सपोर्ट पेज
-// ==========================================
 class SupportTab extends StatelessWidget {
   const SupportTab({super.key});
 
@@ -1511,9 +1483,6 @@ class SupportTab extends StatelessWidget {
   }
 }
 
-// ==========================================
-// 10 सेकंड का टाइमर और सक्सेस स्क्रीन
-// ==========================================
 class LoanSuccessScreen extends StatefulWidget {
   final double amount;
   final String loanBasis;
