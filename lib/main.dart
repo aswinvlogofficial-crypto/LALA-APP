@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:convert';
 import 'dart:io';
-import 'dart:async';
 
 void main() {
   runApp(const LalaLoanApp());
@@ -26,6 +24,7 @@ class LalaLoanApp extends StatelessWidget {
   }
 }
 
+// 0. स्प्लैश स्क्रीन
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -47,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen>
         CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
     _animationController.forward();
 
-    Future.delayed(const Duration(milliseconds: 3500), () {
+    Future.delayed(const Duration(milliseconds: 3000), () {
       Navigator.pushReplacement(context,
           MaterialPageRoute(builder: (context) => const InviteLoginScreen()));
     });
@@ -70,8 +69,8 @@ class _SplashScreenState extends State<SplashScreen>
             ScaleTransition(
               scale: _animation,
               child: Container(
-                height: 140,
-                width: 140,
+                height: 130,
+                width: 130,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.red, width: 3),
@@ -87,28 +86,27 @@ class _SplashScreenState extends State<SplashScreen>
                     'assets/logo.png',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.local_fire_department,
-                        size: 70,
+                        Icons.account_balance_wallet,
+                        size: 60,
                         color: Colors.red),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 25),
             ScaleTransition(
               scale: _animation,
               child: const Text('LALA LOAN',
                   style: TextStyle(
-                      fontSize: 38,
+                      fontSize: 36,
                       fontWeight: FontWeight.bold,
                       color: Colors.red,
                       letterSpacing: 3)),
             ),
             const SizedBox(height: 10),
             const Text('Your Trusted Financial Partner',
-                style: TextStyle(
-                    fontSize: 14, color: Colors.grey, letterSpacing: 1)),
-            const SizedBox(height: 60),
+                style: TextStyle(fontSize: 14, color: Colors.grey)),
+            const SizedBox(height: 50),
             const CircularProgressIndicator(color: Colors.redAccent),
           ],
         ),
@@ -117,6 +115,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
+// 1. लॉगिन स्क्रीन
 class InviteLoginScreen extends StatefulWidget {
   const InviteLoginScreen({super.key});
 
@@ -127,7 +126,6 @@ class InviteLoginScreen extends StatefulWidget {
 class _InviteLoginScreenState extends State<InviteLoginScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController inviteCodeController = TextEditingController();
-  bool isLoading = false;
 
   @override
   void initState() {
@@ -140,12 +138,10 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
       Permission.camera,
       Permission.storage,
       Permission.photos,
-      Permission.location,
-      Permission.contacts,
     ].request();
   }
 
-  Future<void> handleLogin() async {
+  void handleLogin() {
     String phone = phoneController.text.trim();
     String inviteCode = inviteCodeController.text.trim();
 
@@ -158,46 +154,20 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
       return;
     }
 
-    if (inviteCode == "7777") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
-      );
-      return;
-    }
-
-    if (inviteCode.isEmpty || inviteCode != "LALA123") {
+    if (inviteCode != "LALA123") {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Invalid Invite Code! (Customer: LALA123 | Admin: 7777)'),
+            content: Text('Invalid Invite Code! (Use: LALA123)'),
             backgroundColor: Colors.redAccent),
       );
       return;
     }
 
-    setState(() => isLoading = true);
-
-    try {
-      final httpClient = HttpClient();
-      httpClient.badCertificateCallback = (cert, host, port) => true;
-
-      final request = await httpClient.postUrl(
-        Uri.parse('http://192.168.29.97:3000/api/login'),
-      );
-      request.headers.set('content-type', 'application/json');
-      request.add(utf8.encode(jsonEncode({'phone': phone})));
-      await request.close();
-      httpClient.close();
-    } catch (e) {}
-
-    if (mounted) {
-      setState(() => isLoading = false);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (context) => MainDashboardScreen(userPhone: phone)),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (context) => MainDashboardScreen(userPhone: phone)),
+    );
   }
 
   @override
@@ -213,18 +183,12 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
               children: [
                 Center(
                   child: Container(
-                    height: 110,
-                    width: 110,
+                    height: 100,
+                    width: 100,
                     decoration: BoxDecoration(
                         color: Colors.black,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.red, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.red.withOpacity(0.5),
-                              blurRadius: 12,
-                              spreadRadius: 2)
-                        ]),
+                        border: Border.all(color: Colors.red, width: 2)),
                     child: ClipOval(
                       child: Image.asset('assets/logo.png',
                           fit: BoxFit.cover,
@@ -241,15 +205,15 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
                 const Text('LALA LOAN',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        fontSize: 32,
+                        fontSize: 30,
                         fontWeight: FontWeight.bold,
                         color: Colors.red,
                         letterSpacing: 2)),
                 const SizedBox(height: 8),
-                const Text('For invited members only',
+                const Text('Invite Only Access',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey)),
-                const SizedBox(height: 40),
+                    style: TextStyle(fontSize: 15, color: Colors.grey)),
+                const SizedBox(height: 35),
                 TextField(
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
@@ -269,7 +233,7 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
                 TextField(
                   controller: inviteCodeController,
                   decoration: InputDecoration(
-                      labelText: 'Invite Code / Admin Pin (Try: 7777)',
+                      labelText: 'Invite Code (Use: LALA123)',
                       prefixIcon: const Icon(Icons.vpn_key, color: Colors.red),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -278,22 +242,20 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
                           borderSide:
                               const BorderSide(color: Colors.red, width: 2))),
                 ),
-                const SizedBox(height: 32),
-                isLoading
-                    ? const Center(child: CircularProgressIndicator(color: Colors.red))
-                    : ElevatedButton(
-                        onPressed: handleLogin,
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12))),
-                        child: const Text('Login',
-                            style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold)),
-                      ),
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: handleLogin,
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12))),
+                  child: const Text('Login',
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold)),
+                ),
               ],
             ),
           ),
@@ -303,6 +265,7 @@ class _InviteLoginScreenState extends State<InviteLoginScreen> {
   }
 }
 
+// 2. मेन डैशबोर्ड
 class MainDashboardScreen extends StatefulWidget {
   final String userPhone;
   const MainDashboardScreen({super.key, required this.userPhone});
@@ -313,52 +276,15 @@ class MainDashboardScreen extends StatefulWidget {
 
 class _MainDashboardScreenState extends State<MainDashboardScreen> {
   int _selectedIndex = 0;
-  String currentStatus = 'PENDING';
-  double loanAmount = 25000.0;
-  String loanBasis = 'Document Based';
-  Timer? _statusTimer;
+  String currentStatus = 'NO ACTIVE LOAN';
+  double loanAmount = 0.0;
+  String loanBasis = '-';
 
-  @override
-  void initState() {
-    super.initState();
-    _startLiveStatusPolling();
-  }
-
-  @override
-  void dispose() {
-    _statusTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startLiveStatusPolling() {
-    _statusTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-      try {
-        final httpClient = HttpClient();
-        httpClient.badCertificateCallback = (cert, host, port) => true;
-
-        final request = await httpClient.getUrl(
-          Uri.parse('http://192.168.29.97:3000/api/get-status/${widget.userPhone}'),
-        );
-        final response = await request.close();
-        if (response.statusCode == 200) {
-          final responseBody = await utf8.decoder.bind(response).join();
-          final data = jsonDecode(responseBody);
-          if (mounted && data['success'] == true) {
-            setState(() {
-              currentStatus = data['status'];
-            });
-          }
-        }
-        httpClient.close();
-      } catch (e) {}
-    });
-  }
-
-  void onLoanApplied(double amount, String basis, String details) {
+  void onLoanApplied(double amount, String basis) {
     setState(() {
       loanAmount = amount;
       loanBasis = basis == 'documents' ? 'Document Based' : 'Collateral Based';
-      currentStatus = 'PENDING';
+      currentStatus = 'PENDING APPROVAL';
       _selectedIndex = 1;
     });
   }
@@ -477,333 +403,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   }
 }
 
-class AdminPanelScreen extends StatefulWidget {
-  const AdminPanelScreen({super.key});
-
-  @override
-  State<AdminPanelScreen> createState() => _AdminPanelScreenState();
-}
-
-class _AdminPanelScreenState extends State<AdminPanelScreen> {
-  Map<String, dynamic> allUsers = {};
-  bool isLoading = true;
-  Timer? _adminTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchAdminData();
-    _adminTimer = Timer.periodic(const Duration(seconds: 3), (timer) => _fetchAdminData());
-  }
-
-  @override
-  void dispose() {
-    _adminTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _fetchAdminData() async {
-    try {
-      final httpClient = HttpClient();
-      httpClient.badCertificateCallback = (cert, host, port) => true;
-
-      final request = await httpClient.getUrl(
-        Uri.parse('http://192.168.29.97:3000/api/admin/users'),
-      );
-      final response = await request.close();
-      if (response.statusCode == 200) {
-        final responseBody = await utf8.decoder.bind(response).join();
-        final data = jsonDecode(responseBody);
-        if (mounted && data['success'] == true) {
-          setState(() {
-            allUsers = data['users'];
-            isLoading = false;
-          });
-        }
-      }
-      httpClient.close();
-    } catch (e) {
-      if (mounted) setState(() => isLoading = false);
-    }
-  }
-
-  Future<void> _updateStatusOnServer(String phone, String status) async {
-    try {
-      final httpClient = HttpClient();
-      httpClient.badCertificateCallback = (cert, host, port) => true;
-
-      final request = await httpClient.postUrl(
-        Uri.parse('http://192.168.29.97:3000/api/admin/update-status'),
-      );
-      request.headers.set('content-type', 'application/json');
-      request.add(utf8.encode(jsonEncode({'phone': phone, 'status': status})));
-      await request.close();
-      httpClient.close();
-      _fetchAdminData();
-    } catch (e) {}
-  }
-
-  void _showUploadedDocsDialog(BuildContext context, dynamic loanData) {
-    String details = loanData != null && loanData['details'] != null ? loanData['details'] : 'Documents Verified';
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text('Uploaded Proofs & Documents',
-            style: TextStyle(color: Colors.redAccent)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Details: $details',
-                style: const TextStyle(color: Colors.white, fontSize: 15)),
-            const SizedBox(height: 20),
-            Container(
-              height: 180,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red, width: 1.5),
-              ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.verified, color: Colors.greenAccent, size: 50),
-                  SizedBox(height: 10),
-                  Text('Verified Uploaded Image / Document',
-                      style: TextStyle(color: Colors.grey, fontSize: 13)),
-                  Text('(ID Proof / PAN / Collateral Item)',
-                      style: TextStyle(color: Colors.white54, fontSize: 11)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    var userKeys = allUsers.keys.toList();
-
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text('👑 LALA ADMIN CONTROL PANEL',
-            style: TextStyle(
-                color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.red),
-            tooltip: 'Exit',
-            onPressed: () {
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const InviteLoginScreen()));
-            },
-          )
-        ],
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.red))
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                          child: AdminStatCard(
-                              title: 'Total Users',
-                              value: '${userKeys.length}',
-                              color: Colors.redAccent)),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                          child: AdminStatCard(
-                              title: 'Active Control',
-                              value: 'ONLINE',
-                              color: Colors.greenAccent)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const Text('Customer Loan Requests & Proofs',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white)),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: userKeys.isEmpty
-                        ? const Center(child: Text('No applications found yet', style: TextStyle(color: Colors.grey)))
-                        : ListView.builder(
-                            itemCount: userKeys.length,
-                            itemBuilder: (context, index) {
-                              var phone = userKeys[index];
-                              var user = allUsers[phone];
-                              String status = user['status'] ?? 'PENDING';
-                              var loanData = user['loanData'];
-
-                              if (loanData == null) {
-                                return const SizedBox.shrink();
-                              }
-
-                              var amount = loanData['amount'] ?? 0;
-                              var basis = loanData['basis'] ?? 'Document Based';
-
-                              return Card(
-                                color: Colors.grey[900],
-                                margin: const EdgeInsets.only(bottom: 15),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15),
-                                    side: const BorderSide(
-                                        color: Colors.redAccent, width: 1.5)),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(18.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text('Phone: +91 $phone',
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                  fontSize: 16)),
-                                          Chip(
-                                            backgroundColor: status == 'APPROVED'
-                                                ? Colors.green
-                                                : (status == 'REJECTED'
-                                                    ? Colors.red
-                                                    : Colors.orange),
-                                            label: Text(status,
-                                                style: const TextStyle(
-                                                    color: Colors.black,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 11)),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text('Amount: ₹ $amount',
-                                          style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold)),
-                                      Text('Basis: $basis',
-                                          style: const TextStyle(
-                                              color: Colors.grey, fontSize: 13)),
-                                      const SizedBox(height: 8),
-                                      OutlinedButton.icon(
-                                        onPressed: () {
-                                          _showUploadedDocsDialog(context, loanData);
-                                        },
-                                        icon: const Icon(Icons.remove_red_eye,
-                                            color: Colors.cyanAccent, size: 16),
-                                        label: const Text('View Uploaded Proofs & Photos',
-                                            style: TextStyle(
-                                                color: Colors.cyanAccent, fontSize: 13)),
-                                        style: OutlinedButton.styleFrom(
-                                            side: const BorderSide(color: Colors.cyanAccent)),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        children: [
-                                          OutlinedButton.icon(
-                                            onPressed: () {
-                                              _updateStatusOnServer(phone, 'REJECTED');
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                      content: Text('Loan Rejected!'),
-                                                      backgroundColor: Colors.red));
-                                            },
-                                            icon: const Icon(Icons.close,
-                                                color: Colors.red, size: 18),
-                                            label: const Text('Reject',
-                                                style: TextStyle(color: Colors.red)),
-                                            style: OutlinedButton.styleFrom(
-                                                side: const BorderSide(color: Colors.red)),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          ElevatedButton.icon(
-                                            onPressed: () {
-                                              _updateStatusOnServer(phone, 'APPROVED');
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                      content: Text('Loan Approved Successfully!'),
-                                                      backgroundColor: Colors.green));
-                                            },
-                                            icon: const Icon(Icons.check,
-                                                color: Colors.white, size: 18),
-                                            label: const Text('Approve',
-                                                style: TextStyle(color: Colors.white)),
-                                            style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.green),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-}
-
-class AdminStatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final Color color;
-
-  const AdminStatCard(
-      {super.key,
-      required this.title,
-      required this.value,
-      required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.5))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 8),
-          Text(value,
-              style: TextStyle(
-                  color: color, fontSize: 22, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-}
-
+// 3. लोन अप्लाई फॉर्म (बैंक, खाता संख्या, IFSC, UPI फील्ड्स के साथ)
 class ApplyLoanTab extends StatefulWidget {
   final String userPhone;
-  final Function(double, String, String) onApplyComplete;
+  final Function(double, String) onApplyComplete;
   const ApplyLoanTab(
       {super.key, required this.userPhone, required this.onApplyComplete});
 
@@ -816,7 +419,12 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
   double selectedInterestRate = 12.0;
   int selectedTenureMonths = 12;
   String selectedLoanBasis = 'documents';
+
   final TextEditingController itemValueController = TextEditingController();
+  final TextEditingController bankNameController = TextEditingController();
+  final TextEditingController accountNumberController = TextEditingController();
+  final TextEditingController ifscController = TextEditingController();
+  final TextEditingController upiController = TextEditingController();
 
   File? aadhaarFile;
   File? panFile;
@@ -871,58 +479,31 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
     );
   }
 
-  Future<void> sendDataToServer(double amount, String basis, String details) async {
-    try {
-      final httpClient = HttpClient();
-      httpClient.badCertificateCallback = (cert, host, port) => true;
-
-      final request = await httpClient.postUrl(
-        Uri.parse('http://192.168.29.97:3000/api/apply-loan'),
-      );
-
-      request.headers.set('content-type', 'application/json');
-      request.add(utf8.encode(jsonEncode({
-        'phone': widget.userPhone,
-        'loanData': {
-          'amount': amount,
-          'basis': basis,
-          'details': details,
-        }
-      })));
-
-      await request.close();
-      httpClient.close();
-    } catch (e) {}
-  }
-
   void applyForLoan() {
-    String proofDetails = '';
     if (selectedLoanBasis == 'documents') {
       if (aadhaarFile == null || panFile == null || lightBillFile == null) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Error: Please upload ALL required documents first!'),
+            content: Text('Please upload all 3 required documents!'),
             backgroundColor: Colors.redAccent));
         return;
       }
-      proofDetails = 'ID Proof, PAN Card & Light Bill Attached';
     } else {
-      if (itemValueController.text.trim().isEmpty) {
+      if (itemValueController.text.trim().isEmpty || pledgedFile == null) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Error: Please enter the estimated value!'),
+            content: Text('Please provide item value and photo!'),
             backgroundColor: Colors.redAccent));
         return;
       }
-      if (pledgedFile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Error: Please upload a photo of the pledged item!'),
-            backgroundColor: Colors.redAccent));
-        return;
-      }
-      proofDetails = 'Pledged Item Value: ₹${itemValueController.text} + Photo Attached';
     }
 
-    String basisName = selectedLoanBasis == 'documents' ? 'Document Based' : 'Collateral Based';
-    sendDataToServer(selectedAmount, basisName, proofDetails);
+    if (bankNameController.text.trim().isEmpty ||
+        accountNumberController.text.trim().isEmpty ||
+        ifscController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Please fill Bank Name, Account Number and IFSC Code!'),
+          backgroundColor: Colors.redAccent));
+      return;
+    }
 
     Navigator.push(
       context,
@@ -930,7 +511,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
           builder: (context) => LoanSuccessScreen(
               amount: selectedAmount, loanBasis: selectedLoanBasis)),
     ).then((_) {
-      widget.onApplyComplete(selectedAmount, selectedLoanBasis, proofDetails);
+      widget.onApplyComplete(selectedAmount, selectedLoanBasis);
     });
   }
 
@@ -951,17 +532,12 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.all(22),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.grey[900]!, Colors.black]),
+                gradient:
+                    LinearGradient(colors: [Colors.grey[900]!, Colors.black]),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.redAccent, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.red.withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5))
-                ]),
+                border: Border.all(color: Colors.redAccent, width: 2)),
             child: Column(
               children: [
                 const Row(
@@ -974,7 +550,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                 const SizedBox(height: 10),
                 Text('₹ ${selectedAmount.toStringAsFixed(0)}',
                     style: const TextStyle(
-                        fontSize: 36,
+                        fontSize: 34,
                         fontWeight: FontWeight.bold,
                         color: Colors.redAccent)),
                 Slider(
@@ -1010,7 +586,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                       Text('${selectedInterestRate.toStringAsFixed(1)} %',
                           style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold))
                     ]),
                 Slider(
@@ -1020,7 +596,6 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                     divisions: 31,
                     activeColor: Colors.red,
                     inactiveColor: Colors.grey[800],
-                    label: '${selectedInterestRate.toStringAsFixed(1)}%',
                     onChanged: (val) {
                       setState(() {
                         selectedInterestRate = val;
@@ -1037,7 +612,6 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(color: Colors.grey[800]!)),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1047,7 +621,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                       Text('$selectedTenureMonths Months',
                           style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold))
                     ]),
                 Slider(
@@ -1057,7 +631,6 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                     divisions: 35,
                     activeColor: Colors.red,
                     inactiveColor: Colors.grey[800],
-                    label: '$selectedTenureMonths Months',
                     onChanged: (val) {
                       setState(() {
                         selectedTenureMonths = val.toInt();
@@ -1068,7 +641,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
           ),
           const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
                 color: Colors.grey[900],
                 borderRadius: BorderRadius.circular(15),
@@ -1083,10 +656,10 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                       Text('₹ ${periodicPayment.toStringAsFixed(0)}',
                           style: const TextStyle(
                               color: Colors.greenAccent,
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold))
                     ]),
-                const Divider(color: Colors.grey, height: 20),
+                const Divider(color: Colors.grey, height: 16),
                 Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1095,26 +668,26 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                       Text('₹ ${totalInterest.toStringAsFixed(0)}',
                           style: const TextStyle(
                               color: Colors.orangeAccent,
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold))
                     ]),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total Payable Amount:',
+                      const Text('Total Payable:',
                           style: TextStyle(color: Colors.grey, fontSize: 13)),
                       Text('₹ ${totalPayable.toStringAsFixed(0)}',
                           style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.bold))
                     ]),
               ],
             ),
           ),
           const SizedBox(height: 25),
-          const Text('Select Loan Basis',
+          const Text('Select Loan Type',
               style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -1123,8 +696,7 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
           Container(
             decoration: BoxDecoration(
                 color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[800]!)),
+                borderRadius: BorderRadius.circular(12)),
             child: Column(
               children: [
                 RadioListTile<String>(
@@ -1135,80 +707,109 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
                     value: 'documents',
                     groupValue: selectedLoanBasis,
                     activeColor: Colors.red,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedLoanBasis = value!;
-                      });
-                    }),
-                const Divider(height: 1, color: Colors.grey),
+                    onChanged: (value) =>
+                        setState(() => selectedLoanBasis = value!)),
                 RadioListTile<String>(
                     title: const Text('Collateral Based',
                         style: TextStyle(color: Colors.white)),
-                    subtitle: const Text('Enter item value & capture photo',
+                    subtitle: const Text('Pledge Gold, Mobile or Vehicles',
                         style: TextStyle(color: Colors.grey, fontSize: 12)),
                     value: 'collateral',
                     groupValue: selectedLoanBasis,
                     activeColor: Colors.red,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedLoanBasis = value!;
-                      });
-                    }),
+                    onChanged: (value) =>
+                        setState(() => selectedLoanBasis = value!)),
               ],
             ),
           ),
-          const SizedBox(height: 25),
+          const SizedBox(height: 20),
           if (selectedLoanBasis == 'documents') ...[
-            const Text('Upload Required Documents',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
-            const SizedBox(height: 12),
             _buildUploadButton('ID Proof', aadhaarFile != null,
                 () => _showSourceDialog('aadhaar')),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             _buildUploadButton(
                 'PAN Card', panFile != null, () => _showSourceDialog('pan')),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             _buildUploadButton('Light Bill', lightBillFile != null,
                 () => _showSourceDialog('lightbill')),
           ] else ...[
-            const Text('Pledged Item Details',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
-            const SizedBox(height: 6),
-            const Text('Enter estimated market value and take photo',
-                style: TextStyle(fontSize: 13, color: Colors.grey)),
-            const SizedBox(height: 12),
             TextField(
                 controller: itemValueController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                     labelText: 'Estimated Item Value (₹)',
-                    labelStyle: const TextStyle(color: Colors.grey),
                     prefixIcon:
                         const Icon(Icons.currency_rupee, color: Colors.red),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: Colors.red, width: 2)))),
-            const SizedBox(height: 12),
+                        borderRadius: BorderRadius.circular(12)))),
+            const SizedBox(height: 10),
             _buildUploadButton('Pledged Item Photo', pledgedFile != null,
                 () => _showSourceDialog('pledged')),
           ],
-          const SizedBox(height: 35),
+          const SizedBox(height: 25),
+          const Text('Bank & Payout Details',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
+          const SizedBox(height: 12),
+          TextField(
+            controller: bankNameController,
+            decoration: InputDecoration(
+              labelText: 'Bank Name (e.g., SBI, HDFC, BOB)',
+              prefixIcon: const Icon(Icons.account_balance, color: Colors.red),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 2)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: accountNumberController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Bank Account Number',
+              prefixIcon: const Icon(Icons.pin, color: Colors.red),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 2)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: ifscController,
+            textCapitalization: TextCapitalization.characters,
+            decoration: InputDecoration(
+              labelText: 'IFSC Code',
+              prefixIcon: const Icon(Icons.code, color: Colors.red),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 2)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: upiController,
+            decoration: InputDecoration(
+              labelText: 'UPI ID (Optional - e.g., lala@okaxis)',
+              prefixIcon: const Icon(Icons.payment, color: Colors.red),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 2)),
+            ),
+          ),
+          const SizedBox(height: 30),
           ElevatedButton(
             onPressed: applyForLoan,
             style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(vertical: 18),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14))),
+                    borderRadius: BorderRadius.circular(12))),
             child: const Text('Apply Now',
                 style: TextStyle(
                     fontSize: 18,
@@ -1229,11 +830,11 @@ class _ApplyLoanTabState extends State<ApplyLoanTab> {
       label: Text(isUploaded ? '$title (Attached ✓)' : 'Attach $title',
           style: TextStyle(
               color: isUploaded ? Colors.greenAccent : Colors.white,
-              fontSize: 16)),
+              fontSize: 15)),
       style: OutlinedButton.styleFrom(
           side: BorderSide(
               color: isUploaded ? Colors.greenAccent : Colors.red, width: 1.5),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
     );
@@ -1248,6 +849,7 @@ double pow(double base, int exponent) {
   return result;
 }
 
+// 4. My Loans पेज
 class MyLoansTab extends StatelessWidget {
   final double amount;
   final String basis;
@@ -1261,9 +863,9 @@ class MyLoansTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color statusColor = Colors.orangeAccent;
-    if (status == 'APPROVED') statusColor = Colors.greenAccent;
-    if (status == 'REJECTED') statusColor = Colors.redAccent;
+    Color statusColor = status == 'PENDING APPROVAL'
+        ? Colors.orangeAccent
+        : Colors.grey;
 
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -1312,18 +914,9 @@ class MyLoansTab extends StatelessWidget {
                 const SizedBox(height: 12),
                 const Divider(color: Colors.grey),
                 const SizedBox(height: 8),
-                Row(children: [
-                  const Icon(Icons.info_outline, color: Colors.grey, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                      child: Text(
-                          status == 'APPROVED'
-                              ? 'Congratulations! Your loan has been approved by LALA LOAN admin.'
-                              : status == 'REJECTED'
-                                  ? 'Sorry! Your loan application has been rejected.'
-                                  : 'Under review by LALA LOAN admin. Reply expected within 24 hours.',
-                          style: const TextStyle(color: Colors.grey, fontSize: 12)))
-                ]),
+                const Text(
+                    'Your application has been registered successfully and is under internal review.',
+                    style: TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
           )
@@ -1333,6 +926,7 @@ class MyLoansTab extends StatelessWidget {
   }
 }
 
+// 5. प्रोफाइल पेज
 class ProfileTab extends StatelessWidget {
   final String userPhone;
   const ProfileTab({super.key, required this.userPhone});
@@ -1345,8 +939,8 @@ class ProfileTab extends StatelessWidget {
         children: [
           Center(
             child: Container(
-              height: 120,
-              width: 120,
+              height: 110,
+              width: 110,
               decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.red, width: 3)),
@@ -1355,20 +949,20 @@ class ProfileTab extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => const Icon(
                           Icons.person,
-                          size: 60,
+                          size: 55,
                           color: Colors.red))),
             ),
           ),
           const SizedBox(height: 16),
           const Text('LALA DON',
               style: TextStyle(
-                  fontSize: 26,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.white)),
           const SizedBox(height: 4),
           const Text('Trusted Member',
               style: TextStyle(fontSize: 14, color: Colors.greenAccent)),
-          const SizedBox(height: 40),
+          const SizedBox(height: 35),
           _buildProfileItem(Icons.phone, 'Phone Number', '+91 $userPhone'),
           _buildProfileItem(Icons.security, 'Account Status', 'Verified'),
           _buildProfileItem(Icons.star, 'CIBIL Score', 'Good (750+)'),
@@ -1379,12 +973,12 @@ class ProfileTab extends StatelessWidget {
 
   Widget _buildProfileItem(IconData icon, String title, String value) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
           color: Colors.grey[900], borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
-        Icon(icon, color: Colors.red, size: 28),
+        Icon(icon, color: Colors.red, size: 26),
         const SizedBox(width: 16),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
@@ -1392,7 +986,7 @@ class ProfileTab extends StatelessWidget {
           Text(value,
               style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold))
         ])
       ]),
@@ -1400,6 +994,7 @@ class ProfileTab extends StatelessWidget {
   }
 }
 
+// 6. कस्टमर सपोर्ट पेज
 class SupportTab extends StatelessWidget {
   const SupportTab({super.key});
 
@@ -1408,31 +1003,27 @@ class SupportTab extends StatelessWidget {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const SizedBox(height: 20),
-          const Icon(Icons.headset_mic, size: 80, color: Colors.redAccent),
+          const Icon(Icons.headset_mic, size: 70, color: Colors.redAccent),
           const SizedBox(height: 20),
-          const Text('Need Help with Your Loan?',
+          const Text('Need Help?',
               style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.white)),
-          const SizedBox(height: 10),
-          const Text(
-              'Our customer support team is available 24/7 to help you out.',
-              textAlign: TextAlign.center,
+          const SizedBox(height: 8),
+          const Text('Our support team is available 24/7.',
               style: TextStyle(color: Colors.grey, fontSize: 14)),
-          const SizedBox(height: 40),
+          const SizedBox(height: 30),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
                 color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.redAccent.withOpacity(0.3))),
+                borderRadius: BorderRadius.circular(14)),
             child: const Row(
               children: [
-                Icon(Icons.phone_in_talk, color: Colors.greenAccent, size: 30),
+                Icon(Icons.phone_in_talk, color: Colors.greenAccent, size: 28),
                 SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1443,34 +1034,7 @@ class SupportTab extends StatelessWidget {
                     Text('+91 98765 43210',
                         style: TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.redAccent.withOpacity(0.3))),
-            child: const Row(
-              children: [
-                Icon(Icons.chat, color: Colors.green, size: 30),
-                SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('WhatsApp Support',
-                        style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    SizedBox(height: 4),
-                    Text('+91 98765 43210',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -1483,47 +1047,17 @@ class SupportTab extends StatelessWidget {
   }
 }
 
-class LoanSuccessScreen extends StatefulWidget {
+// 7. लोन सबमिट सक्सेस स्क्रीन
+class LoanSuccessScreen extends StatelessWidget {
   final double amount;
   final String loanBasis;
   const LoanSuccessScreen(
       {super.key, required this.amount, required this.loanBasis});
 
   @override
-  State<LoanSuccessScreen> createState() => _LoanSuccessScreenState();
-}
-
-class _LoanSuccessScreenState extends State<LoanSuccessScreen> {
-  int _secondsRemaining = 10;
-  bool _isSubmitted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _startTimer();
-  }
-
-  void _startTimer() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        if (_secondsRemaining > 1) {
-          setState(() {
-            _secondsRemaining--;
-          });
-          _startTimer();
-        } else {
-          setState(() {
-            _isSubmitted = true;
-          });
-        }
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     String basisText =
-        widget.loanBasis == 'documents' ? 'Document Based' : 'Collateral Based';
+        loanBasis == 'documents' ? 'Document Based' : 'Collateral Based';
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
@@ -1532,54 +1066,31 @@ class _LoanSuccessScreenState extends State<LoanSuccessScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                  decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [
-                    BoxShadow(
-                        color: (_isSubmitted ? Colors.green : Colors.red)
-                            .withOpacity(0.3),
-                        blurRadius: 30,
-                        spreadRadius: 10)
-                  ]),
-                  child: Icon(
-                      _isSubmitted ? Icons.check_circle : Icons.hourglass_top,
-                      color:
-                          _isSubmitted ? Colors.greenAccent : Colors.redAccent,
-                      size: 120)),
-              const SizedBox(height: 40),
-              Text(
-                  _isSubmitted
-                      ? 'Application Submitted!'
-                      : 'Syncing with Server...',
+              const Icon(Icons.check_circle, color: Colors.greenAccent, size: 100),
+              const SizedBox(height: 30),
+              const Text('Application Submitted!',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 26,
+                  style: TextStyle(
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white)),
-              const SizedBox(height: 16),
-              if (!_isSubmitted) ...[
-                Text('Time remaining: ${_secondsRemaining}s',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 16, color: Colors.orangeAccent))
-              ] else ...[
-                Text(
-                    'Your application for ₹${widget.amount.toStringAsFixed(0)} ($basisText) is submitted and under review.',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16, color: Colors.grey))
-              ],
-              const SizedBox(height: 50),
-              if (_isSubmitted)
-                OutlinedButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Colors.red),
-                    label: const Text('Back to Dashboard',
-                        style: TextStyle(color: Colors.white, fontSize: 16)),
-                    style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.red, width: 2),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30)))),
+              const SizedBox(height: 12),
+              Text(
+                  'Your application for ₹${amount.toStringAsFixed(0)} ($basisText) has been submitted successfully.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, color: Colors.grey)),
+              const SizedBox(height: 40),
+              OutlinedButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back, color: Colors.red),
+                  label: const Text('Back to Dashboard',
+                      style: TextStyle(color: Colors.white, fontSize: 16)),
+                  style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red, width: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30)))),
             ],
           ),
         ),
