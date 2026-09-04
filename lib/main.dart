@@ -28,12 +28,27 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _phoneController = TextEditingController();
+  final _inviteController = TextEditingController();
+  
+  // यहाँ आप अपना फिक्स इनवाइट कोड सेट कर सकते हैं
+  final String validInviteCode = "LALA123";
 
   void _login() {
+    if (_inviteController.text.trim() != validInviteCode) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid Invite Code! Access denied.')),
+      );
+      return;
+    }
+
     if (_phoneController.text.isNotEmpty) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your phone number')),
       );
     }
   }
@@ -52,6 +67,14 @@ class _LoginPageState extends State<LoginPage> {
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
                 labelText: 'Phone Number',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _inviteController,
+              decoration: const InputDecoration(
+                labelText: 'Invite Code (Reference Only)',
                 border: OutlineInputBorder(),
               ),
             ),
