@@ -4,21 +4,90 @@ void main() {
   runApp(const MyApp());
 }
 
+// ---------- रंग ----------
+const Color kNavy = Color(0xFF0B1426);
+const Color kNavyLight = Color(0xFF14213D);
+const Color kCard = Color(0xFF1B2A4A);
+const Color kGold = Color(0xFFD4AF37);
+const Color kGoldSoft = Color(0xFFF2D675);
+const Color kText = Color(0xFFF5F1E6);
+const Color kTextDim = Color(0xFFA9B2C7);
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'LALA App',
+      title: 'LALA Loan',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: kNavy,
+        colorScheme: const ColorScheme.dark(
+          primary: kGold,
+          onPrimary: kNavy,
+          surface: kNavyLight,
+          onSurface: kText,
+        ),
+        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        }),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: kNavy,
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            color: kGold,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: kCard,
+          labelStyle: const TextStyle(color: kTextDim),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: kGold, width: 1.5),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kGold,
+            foregroundColor: kNavy,
+            minimumSize: const Size.fromHeight(54),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: kNavyLight,
+          indicatorColor: kGold.withOpacity(0.2),
+          labelTextStyle: WidgetStateProperty.all(
+            const TextStyle(color: kText, fontSize: 12),
+          ),
+        ),
       ),
       home: const LoginPage(),
     );
   }
 }
 
+// ---------- लॉगिन ----------
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -26,225 +95,165 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage>
+    with SingleTickerProviderStateMixin {
   final _phoneController = TextEditingController();
   final _inviteController = TextEditingController();
-  
-  // यहाँ आप अपना फिक्स इनवाइट कोड सेट कर सकते हैं
+  late final AnimationController _anim;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  // अभी इनवाइट कोड ऐप में है। बाद में सर्वर से चेक होगा।
   final String validInviteCode = "LALA123";
 
+  @override
+  void initState() {
+    super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _fade = CurvedAnimation(parent: _anim, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic));
+    _anim.forward();
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    _phoneController.dispose();
+    _inviteController.dispose();
+    super.dispose();
+  }
+
+  void _showMsg(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: kCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    );
+  }
+
   void _login() {
-    if (_inviteController.text.trim() != validInviteCode) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid Invite Code! Access denied.')),
-      );
+    final phone = _phoneController.text.trim();
+    if (phone.length != 10) {
+      _showMsg('कृपया 10 अंकों का सही फ़ोन नंबर डालें');
       return;
     }
-
-    if (_phoneController.text.isNotEmpty) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your phone number')),
-      );
+    if (_inviteController.text.trim() != validInviteCode) {
+      _showMsg('गलत इनवाइट कोड। एक्सेस नहीं मिला।');
+      return;
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('LALA Loan Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _inviteController,
-              decoration: const InputDecoration(
-                labelText: 'Invite Code (Reference Only)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _login,
-              child: const Text('Login'),
-            ),
-          ],
-        ),
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (_, __, ___) => const HomeScreen(),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
       ),
     );
   }
-}
-
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = [
-    const LoanCalculatorPage(),
-    const PaymentSetupPage(),
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calculate),
-            label: 'Loan Calculator',
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [kNavyLight, kNavy],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance),
-            label: 'Payment Details',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class LoanCalculatorPage extends StatefulWidget {
-  const LoanCalculatorPage({super.key});
-
-  @override
-  State<LoanCalculatorPage> createState() => _LoanCalculatorPageState();
-}
-
-class _LoanCalculatorPageState extends State<LoanCalculatorPage> {
-  final _amountController = TextEditingController();
-  final _monthsController = TextEditingController();
-  double _emi = 0.0;
-
-  void _calculateEMI() {
-    double? principal = double.tryParse(_amountController.text);
-    double? months = double.tryParse(_monthsController.text);
-
-    if (principal != null && months != null && months > 0) {
-      setState(() {
-        _emi = principal / months;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Loan Calculator')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Loan Amount'),
-            ),
-            TextField(
-              controller: _monthsController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Months'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _calculateEMI,
-              child: const Text('Calculate EMI'),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Monthly EMI: ₹$_emi',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
         ),
-      ),
-    );
-  }
-}
-
-class PaymentSetupPage extends StatefulWidget {
-  const PaymentSetupPage({super.key});
-
-  @override
-  State<PaymentSetupPage> createState() => _PaymentSetupPageState();
-}
-
-class _PaymentSetupPageState extends State<PaymentSetupPage> {
-  final _bankNameController = TextEditingController();
-  final _accountNoController = TextEditingController();
-  final _ifscController = TextEditingController();
-  final _upiController = TextEditingController();
-
-  void _savePaymentDetails() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Payment details saved successfully!')),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Add Bank & UPI Details')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: _bankNameController,
-                decoration: const InputDecoration(labelText: 'Bank Name'),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: FadeTransition(
+                opacity: _fade,
+                child: SlideTransition(
+                  position: _slide,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: kCard,
+                          border: Border.all(color: kGold, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: kGold.withOpacity(0.25),
+                              blurRadius: 24,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/logo.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.account_balance,
+                              color: kGold,
+                              size: 44,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'LALA LOAN',
+                        style: TextStyle(
+                          color: kGold,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 4,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'केवल इनवाइट के ज़रिए प्रवेश',
+                        style: TextStyle(color: kTextDim, fontSize: 14),
+                      ),
+                      const SizedBox(height: 36),
+                      TextField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        decoration: const InputDecoration(
+                          labelText: 'फ़ोन नंबर',
+                          prefixIcon: Icon(Icons.phone_outlined, color: kGold),
+                          counterText: '',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _inviteController,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: const InputDecoration(
+                          labelText: 'इनवाइट कोड',
+                          prefixIcon: Icon(Icons.vpn_key_outlined, color: kGold),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      ElevatedButton(
+                        onPressed: _login,
+                        child: const Text('लॉगिन करें'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _accountNoController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Account Number'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _ifscController,
-                decoration: const InputDecoration(labelText: 'IFSC Code'),
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _upiController,
-                decoration: const InputDecoration(labelText: 'UPI ID (e.g. ybl@upi)'),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _savePaymentDetails,
-                child: const Text('Save Details'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
