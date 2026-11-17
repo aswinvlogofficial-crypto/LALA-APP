@@ -4,7 +4,7 @@ void main() {
   runApp(const MyApp());
 }
 
-// ---------- रंग ----------
+// ---------- रंग (Colors) ----------
 const Color kNavy = Color(0xFF0B1426);
 const Color kNavyLight = Color(0xFF14213D);
 const Color kCard = Color(0xFF1B2A4A);
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'LALA Loan',
+      title: 'LALA APP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -87,7 +87,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// ---------- लॉगिन ----------
+// ---------- स्लाइड लॉगिन पेज (Slide-to-Login & Invite Code) ----------
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -95,15 +95,14 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
-    with SingleTickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
   final _phoneController = TextEditingController();
   final _inviteController = TextEditingController();
   late final AnimationController _anim;
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
 
-  // अभी इनवाइट कोड ऐप में है। बाद में सर्वर से चेक होगा।
+  bool _isSliderUnlocked = false;
   final String validInviteCode = "LALA123";
 
   @override
@@ -140,14 +139,16 @@ class _LoginPageState extends State<LoginPage>
     );
   }
 
-  void _login() {
+  void _attemptLogin() {
     final phone = _phoneController.text.trim();
     if (phone.length != 10) {
       _showMsg('कृपया 10 अंकों का सही फ़ोन नंबर डालें');
+      setState(() => _isSliderUnlocked = false);
       return;
     }
     if (_inviteController.text.trim() != validInviteCode) {
       _showMsg('गलत इनवाइट कोड। एक्सेस नहीं मिला।');
+      setState(() => _isSliderUnlocked = false);
       return;
     }
     Navigator.pushReplacement(
@@ -197,21 +198,15 @@ class _LoginPageState extends State<LoginPage>
                             ),
                           ],
                         ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/logo.png',
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(
-                              Icons.account_balance,
-                              color: kGold,
-                              size: 44,
-                            ),
-                          ),
+                        child: const Icon(
+                          Icons.security,
+                          color: kGold,
+                          size: 44,
                         ),
                       ),
                       const SizedBox(height: 24),
                       const Text(
-                        'LALA LOAN',
+                        'LALA APP',
                         style: TextStyle(
                           color: kGold,
                           fontSize: 28,
@@ -221,7 +216,7 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'केवल इनवाइट के ज़रिए प्रवेश',
+                        'Own by Lala • Exclusive Access',
                         style: TextStyle(color: kTextDim, fontSize: 14),
                       ),
                       const SizedBox(height: 36),
@@ -230,7 +225,7 @@ class _LoginPageState extends State<LoginPage>
                         keyboardType: TextInputType.phone,
                         maxLength: 10,
                         decoration: const InputDecoration(
-                          labelText: 'फ़ोन नंबर',
+                          labelText: 'फ़ोन नंबर (Phone Number)',
                           prefixIcon: Icon(Icons.phone_outlined, color: kGold),
                           counterText: '',
                         ),
@@ -240,14 +235,52 @@ class _LoginPageState extends State<LoginPage>
                         controller: _inviteController,
                         textCapitalization: TextCapitalization.characters,
                         decoration: const InputDecoration(
-                          labelText: 'इनवाइट कोड',
+                          labelText: 'इनवाइट कोड (Invite Code: LALA123)',
                           prefixIcon: Icon(Icons.vpn_key_outlined, color: kGold),
                         ),
                       ),
                       const SizedBox(height: 28),
-                      ElevatedButton(
-                        onPressed: _login,
-                        child: const Text('लॉगिन करें'),
+                      // Slide to Login Interactive Component
+                      Container(
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: kCard,
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: kGold.withOpacity(0.5)),
+                        ),
+                        child: Stack(
+                          children: [
+                            const Center(
+                              child: Text(
+                                '>>> Slide to Login LALA APP >>>',
+                                style: TextStyle(color: kTextDim, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ),
+                            AnimatedPositioned(
+                              duration: const Duration(milliseconds: 200),
+                              left: _isSliderUnlocked ? 230 : 0,
+                              child: GestureDetector(
+                                onHorizontalDragUpdate: (details) {
+                                  if (details.delta.dx > 5) {
+                                    setState(() {
+                                      _isSliderUnlocked = true;
+                                    });
+                                    _attemptLogin();
+                                  }
+                                },
+                                child: Container(
+                                  height: 60,
+                                  width: 60,
+                                  decoration: BoxDecoration(
+                                    color: kGold,
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  child: const Icon(Icons.arrow_forward_ios, color: kNavy),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -256,6 +289,269 @@ class _LoginPageState extends State<LoginPage>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ---------- मुख्य होम स्क्रीन (Main Navigation & Tabs) ----------
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = const [
+    LoanCalculatorTab(),
+    StreamingTab(),
+    ProfileTab(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('LALA APP - DASHBOARD'),
+      ),
+      body: _pages[_currentIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.calculate_outlined),
+            selectedIcon: Icon(Icons.calculate, color: kGold),
+            label: 'Loan & Calc',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.live_tv_outlined),
+            selectedIcon: Icon(Icons.live_tv, color: kGold),
+            label: 'Streaming',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person, color: kGold),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------- 1. लोन कैलकुलेटर टैब (1-1L Amount, 1-60% Interest, Few Minutes Status) ----------
+class LoanCalculatorTab extends StatefulWidget {
+  const LoanCalculatorTab({super.key});
+
+  @override
+  State<LoanCalculatorTab> createState() => _LoanCalculatorTabState();
+}
+
+class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
+  double _loanAmount = 25000.0; // ₹1 to ₹1,00,000
+  double _interestRate = 12.0;  // 1% to 60%
+  bool _isSubmitting = false;
+  String _approvalMessage = '';
+
+  void _submitLoan() {
+    setState(() {
+      _isSubmitting = true;
+      _approvalMessage = '';
+    });
+
+    // Realistic processing delay without fixed 10s timer
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        _isSubmitting = false;
+        _approvalMessage = 'Loan Application Submitted Successfully!\nYour loan will be approved in Few Minutes.';
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text(
+          'स्मार्ट लोन कैलकुलेटर (Loan & Interest)',
+          style: TextStyle(color: kGold, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        
+        // Loan Amount Card
+        Card(
+          color: kCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.between,
+                  children: [
+                    const Text('लोन राशि (Loan Amount)', style: TextStyle(color: kTextDim)),
+                    Text('₹${_loanAmount.toStringAsFixed(0)}', style: const TextStyle(color: kGold, fontSize: 18, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                Slider(
+                  value: _loanAmount,
+                  min: 1,
+                  max: 100000,
+                  divisions: 99999,
+                  activeColor: kGold,
+                  inactiveColor: kNavy,
+                  onChanged: (val) => setState(() => _loanAmount = val),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Interest Rate Card (1% to 60%)
+        Card(
+          color: kCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.between,
+                  children: [
+                    const Text('ब्याज दर (Interest Rate)', style: TextStyle(color: kTextDim)),
+                    Text('${_interestRate.toStringAsFixed(1)}% p.a.', style: const TextStyle(color: kGoldSoft, fontSize: 18, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                Slider(
+                  value: _interestRate,
+                  min: 1.0,
+                  max: 60.0,
+                  divisions: 59,
+                  activeColor: kGoldSoft,
+                  inactiveColor: kNavy,
+                  onChanged: (val) => setState(() => _interestRate = val),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        ElevatedButton(
+          onPressed: _isSubmitting ? null : _submitLoan,
+          child: _isSubmitting
+              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: kNavy, strokeWidth: 2))
+              : const Text('लोन के लिए आवेदन करें (Apply Now)'),
+        ),
+        const SizedBox(height: 20),
+
+        if (_approvalMessage.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: kCard,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: kGold, width: 1),
+            ),
+            child: Text(
+              _approvalMessage,
+              style: const TextStyle(color: kGoldSoft, fontWeight: FontWeight.bold, fontSize: 15),
+              textAlign: TextAlign.center,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ---------- 2. स्ट्रीमिंग टैब (LALA DON GAMING Streaming Hub) ----------
+class StreamingTab extends StatelessWidget {
+  const StreamingTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('LALA DON GAMING - Live Feeds', style: TextStyle(color: kGold, fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 14),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: kCard,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: kGold.withOpacity(0.3)),
+              ),
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.videocam_outlined, size: 64, color: kGold),
+                    SizedBox(height: 12),
+                    Text('OBS Stream Integration Active', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: kText)),
+                    SizedBox(height: 6),
+                    Text('Free Fire & GTA V Live Streaming Ready', style: TextStyle(color: kTextDim, fontSize: 13)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------- 3. प्रोफाइल टैब (Lala Don Profile & Settings) ----------
+class ProfileTab extends StatelessWidget {
+  const ProfileTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        children: [
+          const CircleAvatar(
+            radius: 45,
+            backgroundColor: kCard,
+            child: Icon(Icons.person, size: 50, color: kGold),
+          ),
+          const SizedBox(height: 14),
+          const Text('Lala Don (Nishad Aswin)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kGold)),
+          const Text('Owner • LALA APP & LALA DON GAMING', style: TextStyle(color: kTextDim, fontSize: 13)),
+          const SizedBox(height: 30),
+          Card(
+            color: kCard,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.cloud_done, color: kGold),
+                  title: const Text('Cloud Membership Status'),
+                  trailing: const Text('Active', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                ),
+                const Divider(color: kNavy),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt, color: kGold),
+                  title: const Text('Camera & Auto-Upload Handler'),
+                  subtitle: const Text('Permissions & background upload configured'),
+                  trailing: const Icon(Icons.check_circle, color: Colors.greenAccent),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
