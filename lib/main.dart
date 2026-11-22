@@ -33,10 +33,10 @@ class LalaApp extends StatelessWidget {
         colorScheme: baseScheme,
         scaffoldBackgroundColor: navyBg,
         cardColor: navyCard,
-        pageTransitionsTheme: PageTransitionsTheme(
+        pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: const FadeUpwardsPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
           },
         ),
         appBarTheme: const AppBarTheme(
