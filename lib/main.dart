@@ -25,7 +25,7 @@ class LalaApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      title: 'LALA APP - Loan & Streaming Hub',
+      title: 'LALA APP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -111,7 +111,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (invite != requiredInviteCode) {
       setState(() {
         _slideValue = 0.0;
-        _statusMessage = 'Galat Invite Code! Sirf reference code $requiredInviteCode se entry milegi.';
+        _statusMessage =
+            'Galat Invite Code! Sirf reference code $requiredInviteCode se entry milegi.';
       });
       return;
     }
@@ -139,11 +140,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: BoxDecoration(
                   color: LalaApp.navyCard,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: LalaApp.goldAccent.withValues(alpha: 0.45)),
+                  border: Border.all(
+                    color: LalaApp.goldAccent.withValues(alpha: 0.45),
+                  ),
                 ),
                 child: Column(
                   children: const [
-                    Icon(Icons.shield_moon_rounded, size: 54, color: LalaApp.goldAccent),
+                    Icon(
+                      Icons.shield_moon_rounded,
+                      size: 54,
+                      color: LalaApp.goldAccent,
+                    ),
                     SizedBox(height: 10),
                     Text(
                       'LALA APP',
@@ -156,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Android 17 Navy & Gold Edition • Invite Only',
+                      'Navy & Gold Edition • Invite Only',
                       style: TextStyle(fontSize: 13, color: Colors.white70),
                     ),
                   ],
@@ -169,7 +176,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Phone Number',
                   hintText: '9876543210',
-                  prefixIcon: Icon(Icons.phone_android, color: LalaApp.goldAccent),
+                  prefixIcon: Icon(
+                    Icons.phone_android,
+                    color: LalaApp.goldAccent,
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
@@ -179,7 +189,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Invite Code',
                   hintText: 'LALA123',
-                  prefixIcon: Icon(Icons.vpn_key_rounded, color: LalaApp.goldAccent),
+                  prefixIcon: Icon(
+                    Icons.vpn_key_rounded,
+                    color: LalaApp.goldAccent,
+                  ),
                 ),
               ),
               const SizedBox(height: 22),
@@ -188,7 +201,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: BoxDecoration(
                   color: LalaApp.navyCard,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: LalaApp.goldAccent.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: LalaApp.goldAccent.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +213,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: const [
                         Text(
                           'Slide to Login',
-                          style: TextStyle(color: LalaApp.goldSoft, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: LalaApp.goldSoft,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         Text(
                           'Ant tak slide karein',
@@ -242,11 +260,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: BoxDecoration(
                     color: Colors.redAccent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: Text(
                     _statusMessage,
-                    style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -278,11 +301,10 @@ class _MainDashboardState extends State<MainDashboard> {
         onSavePaymentSummary: (summary) {
           setState(() {
             _savedSummary = summary;
-            _selectedIndex = 2;
+            _selectedIndex = 1;
           });
         },
       ),
-      const GamingStreamTab(),
       ProfileAndPaymentTab(
         userPhone: widget.userPhone,
         paymentSummary: _savedSummary,
@@ -303,10 +325,16 @@ class _MainDashboardState extends State<MainDashboard> {
             padding: const EdgeInsets.only(right: 12),
             child: Chip(
               backgroundColor: LalaApp.navySurface,
-              side: BorderSide(color: LalaApp.goldAccent.withValues(alpha: 0.4)),
+              side: BorderSide(
+                color: LalaApp.goldAccent.withValues(alpha: 0.4),
+              ),
               label: const Text(
                 'VIP • LALA123',
-                style: TextStyle(color: LalaApp.goldSoft, fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: LalaApp.goldSoft,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -327,13 +355,11 @@ class _MainDashboardState extends State<MainDashboard> {
             label: 'Loan',
           ),
           NavigationDestination(
-            icon: Icon(Icons.live_tv_outlined),
-            selectedIcon: Icon(Icons.live_tv, color: LalaApp.goldAccent),
-            label: 'Gaming Hub',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet, color: LalaApp.goldAccent),
+            selectedIcon: Icon(
+              Icons.account_balance_wallet,
+              color: LalaApp.goldAccent,
+            ),
             label: 'Bank & Profile',
           ),
         ],
@@ -371,7 +397,8 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
   }
 
   double get _estimatedTotalPayable {
-    final double yearlyInterest = _amount * (_interestRate / 100.0) * (_tenureMonths / 12.0);
+    final double yearlyInterest =
+        _amount * (_interestRate / 100.0) * (_tenureMonths / 12.0);
     return _amount + yearlyInterest;
   }
 
@@ -387,7 +414,9 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
 
     if (acc.isEmpty && upi.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kam se kam Account Number ya UPI ID daalein.')),
+        const SnackBar(
+          content: Text('Kam se kam Account Number ya UPI ID daalein.'),
+        ),
       );
       return;
     }
@@ -400,7 +429,9 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
 
     widget.onSavePaymentSummary(parts.join(' | '));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bank & UPI payout details save ho gayi hain!')),
+      const SnackBar(
+        content: Text('Bank & UPI payout details save ho gayi hain!'),
+      ),
     );
   }
 
@@ -416,7 +447,9 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
             decoration: BoxDecoration(
               color: LalaApp.navyCard,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: LalaApp.goldAccent.withValues(alpha: 0.4)),
+              border: Border.all(
+                color: LalaApp.goldAccent.withValues(alpha: 0.4),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -426,7 +459,10 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
                 Expanded(
                   child: Text(
                     'Approval Status: Few Minutes (Fast Reference Review)',
-                    style: TextStyle(color: LalaApp.goldSoft, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: LalaApp.goldSoft,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -447,11 +483,19 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
                   children: [
                     const Text(
                       'Loan Amount',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: LalaApp.goldSoft),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: LalaApp.goldSoft,
+                      ),
                     ),
                     Text(
                       '₹${_amount.round()}',
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: LalaApp.goldSoft),
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: LalaApp.goldSoft,
+                      ),
                     ),
                   ],
                 ),
@@ -466,7 +510,11 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
                 const SizedBox(height: 8),
                 Text(
                   'Interest Rate: ${_interestRate.toStringAsFixed(0)}%',
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: LalaApp.goldSoft),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: LalaApp.goldSoft,
+                  ),
                 ),
                 Slider(
                   value: _interestRate,
@@ -479,7 +527,11 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
                 const SizedBox(height: 8),
                 Text(
                   'Tenure: $_tenureMonths Months',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
                 Slider(
                   value: _tenureMonths.toDouble(),
@@ -492,7 +544,11 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
                 const Divider(height: 24, color: Colors.white12),
                 Text(
                   'Approx. Monthly Installment: ₹${_estimatedMonthlyPayment.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -508,14 +564,20 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
             decoration: BoxDecoration(
               color: LalaApp.navyCard,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: LalaApp.goldAccent.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: LalaApp.goldAccent.withValues(alpha: 0.3),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text(
                   'Bank Account & UPI Details',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: LalaApp.goldSoft),
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: LalaApp.goldSoft,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -566,106 +628,6 @@ class _LoanCalculatorTabState extends State<LoanCalculatorTab> {
   }
 }
 
-class GamingStreamTab extends StatefulWidget {
-  const GamingStreamTab({super.key});
-
-  @override
-  State<GamingStreamTab> createState() => _GamingStreamTabState();
-}
-
-class _GamingStreamTabState extends State<GamingStreamTab> {
-  String _activeStreamTitle = 'GTA 5 Story & Online Custom Scripts • LALA DON GAMING';
-
-  final List> _streams = [
-    {
-      'title': 'GTA 5 Story & Online Custom Scripts • LALA DON GAMING',
-      'tag': 'LIVE HUB',
-      'desc': 'High-octane gameplay, custom mods & stream highlights.',
-    },
-    {
-      'title': 'Free Fire PC vs Mobile Showdown',
-      'tag': 'REPLAY',
-      'desc': 'Fast-paced matches & community custom rooms.',
-    },
-    {
-      'title': 'Car Mechanic Simulator & Chill Session',
-      'tag': 'VOD',
-      'desc': 'Full builds, tuning & late-night gaming hangout.',
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: LalaApp.navyCard,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: LalaApp.goldAccent.withValues(alpha: 0.45)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.sports_esports, color: LalaApp.goldAccent),
-                  SizedBox(width: 8),
-                  Text(
-                    'LALA DON GAMING STREAMING HUB',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: LalaApp.goldSoft),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                _activeStreamTitle,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Selected stream active hai. Neeche ki list se koi bhi stream ya VOD choose karein.',
-                style: TextStyle(color: Colors.white70, fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        ..._streams.map((item) {
-          final String title = item['title']!;
-          final bool isSelected = title == _activeStreamTitle;
-          return Card(
-            color: isSelected ? LalaApp.navySurface : LalaApp.navyCard,
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-              side: BorderSide(
-                color: isSelected ? LalaApp.goldAccent : Colors.white12,
-              ),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(14),
-              leading: const Icon(Icons.play_circle_fill, color: LalaApp.goldAccent, size: 32),
-              title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(item['desc']!, style: const TextStyle(color: Colors.white70)),
-              ),
-              trailing: Text(
-                item['tag']!,
-                style: const TextStyle(color: LalaApp.goldSoft, fontWeight: FontWeight.bold, fontSize: 12),
-              ),
-              onTap: () => setState(() => _activeStreamTitle = title),
-            ),
-          );
-        }),
-      ],
-    );
-  }
-}
-
 class ProfileAndPaymentTab extends StatelessWidget {
   final String userPhone;
   final String paymentSummary;
@@ -688,19 +650,28 @@ class ProfileAndPaymentTab extends StatelessWidget {
           decoration: BoxDecoration(
             color: LalaApp.navyCard,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: LalaApp.goldAccent.withValues(alpha: 0.35)),
+            border: Border.all(
+              color: LalaApp.goldAccent.withValues(alpha: 0.35),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Member Profile',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: LalaApp.goldSoft),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: LalaApp.goldSoft,
+                ),
               ),
               const SizedBox(height: 10),
               Text('Phone: $userPhone', style: const TextStyle(fontSize: 15)),
               const SizedBox(height: 4),
-              const Text('Access Mode: Invite-Only (LALA123)', style: TextStyle(color: Colors.white70)),
+              const Text(
+                'Access Mode: Invite-Only (LALA123)',
+                style: TextStyle(color: Colors.white70),
+              ),
             ],
           ),
         ),
@@ -716,14 +687,23 @@ class ProfileAndPaymentTab extends StatelessWidget {
             children: [
               const Text(
                 'Saved Bank / UPI Payout Info',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: LalaApp.goldSoft),
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: LalaApp.goldSoft,
+                ),
               ),
               const SizedBox(height: 10),
-              Text(paymentSummary, style: const TextStyle(color: Colors.white, fontSize: 14)),
+              Text(
+                paymentSummary,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
               const SizedBox(height: 14),
               OutlinedButton(
                 onPressed: () {
-                  onUpdateSummary('Abhi koi Bank ya UPI detail save nahi hui hai.');
+                  onUpdateSummary(
+                    'Abhi koi Bank ya UPI detail save nahi hui hai.',
+                  );
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: LalaApp.goldSoft,
